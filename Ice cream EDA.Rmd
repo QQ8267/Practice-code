@@ -1,7 +1,6 @@
 ---
-title: "STAT0006 ICA 3"
-subtitle: "Group 5"
-author: "Student numbers: 21117235, 20120251, 21026223, 21026576"
+title: "Ice cream"
+author: ""
 output: html_document
 ---
 
