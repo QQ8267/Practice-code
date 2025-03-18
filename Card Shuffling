@@ -1,6 +1,6 @@
 ---
 title: "STAT0009 ICA2 Group12"
-auther: "Student Number: 20010640, 20010246, 20009614, 21026576"
+auther: "Student Number: "
 output:
   html_document:
     df_print: paged
