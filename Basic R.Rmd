@@ -1,0 +1,533 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
+<!-- install.packages("ggplot2") -->
+<!-- install.packages("tidyverse") -->
+<!-- install.packages("gridExtra") -->
+
+```{r, echo = FALSE, message = FALSE, waring=FALSE}
+library(ggplot2)
+library(gridExtra)
+library(tidyverse)
+```
+
+---
+title: 'STAT0006: ICA 1'
+author: "Deadline for submission is 12 noon on Monday 14th November 2022"
+date: "Submit a (knitted) pdf document only"
+output:
+  pdf_document: default
+  html_document: default
+subtitle: 'Student number: 21026576'
+---
+
+```{r setup, include=FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(warning = FALSE, message = FALSE) 
+
+```
+
+```{r set_wd}
+setwd("~/Documents/Stat0006/ICA")
+commute <- read.csv("commute.csv")
+commute = na.omit(commute)
+commute = commute[commute$time >= 0, ]
+
+#utility functions
+
+
+calc_rmse <- function(model){
+  return(
+    sqrt(mean((commute$time-predict(model, newdata=commute))^2)
+  ))
+}
+
+
+add_labels <- function(title="", x, y="Time (min)"){
+  
+  t = title
+  if (title=="") {
+    t = str_glue("Time against", x, .sep=" ")
+  }
+  
+  return(
+    labs(
+      title = t ,
+      x = x,
+      y = y
+    )
+  )
+}
+
+plot_obs_vs_pred <- function(model, title){
+  
+  return(
+  data.frame(
+  observed = commute$time,
+  predicted = fitted.values(model)
+) %>% 
+  ggplot(
+    aes(predicted, observed), 
+  ) + add_labels(
+    title = title,
+    x = "Predicted Time (min)",
+    y = "Observed Time (min)"
+  ) + geom_point() + geom_abline(intercept=0, slope=1, col="red")
+)
+}
+```
+
+## Question 1
+
+This is a dataset which contains collective data about a random subset of individuals' commutes over the last five years. This explanatory analysis is conducted for comprehension of the effects of various factors on the individual's length of journey, and further estimates the total time taken for an individual to get to/from work. 8 factors that are believed to have varying impacts on commute time are as follows; the direction of travel either to or from work; the number of cups of coffee they drank if they had stopped at the cafe; types of shoes worn; if they had stopped by their kid's school on the way; the amount of rainfall in mm; the average temperature in degrees Celsius; and the traffic index during their journey.
+
+```{r Direction}
+commute %>% 
+  ggplot(
+    aes(direction, time) 
+  ) + geom_boxplot() + add_labels(
+    x = "Direction"
+  ) + stat_summary(fun = "mean") + labs(caption = "Fig 1")
+```
+
+Fig1: A boxplot comparing the commute time from and to work.
+This indicates that the average journey time from work (38.8minutes) is faster than the average journey time to work (41.0minutes). The mean is represented by black dots in all of the plots.
+
+```{r food}
+commute %>% 
+  ggplot(
+    aes(food, time) 
+  ) + geom_boxplot() + add_labels(
+    x = "Food"
+  ) + stat_summary(fun = "mean") + labs(caption = "Fig 2")
+```
+
+Fig2: A boxplot between the commuting time and whether they stopped for food or not.
+It demonstrates a longer average commuting time when they had stopped for food by 6minutes compared to when they had not stopped for food.
+
+```{r coffee}
+
+coffee <- commute %>% 
+  ggplot(
+    aes(as.factor(coffee), time) 
+  ) + geom_boxplot() + add_labels(
+    x = "Coffee"
+  ) + stat_summary(fun = "mean") + labs(caption = "Fig 3")
+
+coffee
+
+```
+
+Fig3: A boxplot showing commute time for each number of cups of coffee.
+The average commute time if they had not stopped for a coffee is around 28minutes while the marginal time taken to get just one cup of coffee increased the commute time by approximately 17minutes. There is an increasing trend of time taken against the number of coffee with an average of 50minutes for four cups of coffee.
+
+```{r shoes}
+commute %>% 
+  ggplot(
+    aes(shoes, time) 
+  ) + geom_boxplot() + add_labels(
+    x = "Shoes"
+  ) + stat_summary(fun = "mean") + labs(caption = "Fig 4")
+```
+
+Fig4: This contains boxplots for the time against each type of shoe worn by the individual.
+From this plot, wearing sandals led to the highest average commuting time of 45.6minutes compared to other footwear. Trainers can be seen with the lowest average commuting time of 35.6minutes.
+
+```{r school}
+commute %>% 
+  ggplot(
+    aes(school, time) 
+  ) + geom_boxplot() + add_labels(
+    x = "School"
+  ) + stat_summary(fun = "mean") + labs(caption = "Fig 5")
+```
+
+Fig5: A boxplot comparing the difference in time taken whether they had stopped by their children's school on their journey.
+This shows that visiting the school would increase their average commuting time from around 38minutes to 46minutes.
+
+```{r rain}
+
+commute %>% 
+  ggplot(
+    aes(rain, time) 
+  ) + geom_point() + add_labels(
+    x = "Rain (mm)"
+  ) + labs(caption = "Fig 6") + geom_smooth(se = FALSE)
+```
+
+Fig6: A scatter plot demonstrating a weak positive relationship of time against the amount of rainfall in mm using the blue trend line.
+
+
+```{r temperature}
+commute %>% 
+  ggplot(
+    aes(temperature, time) 
+  ) + geom_point() + add_labels(
+    x = "Temperature"
+  ) + labs(caption = "Fig 7") + geom_smooth(se=FALSE)
+```
+
+Fig7: This figure has a weak positive relationship between temperature and time which is shown by the blue trend line.
+
+```{r traffic}
+commute %>% 
+  ggplot(
+    aes(traffic, time) 
+  ) + geom_point() + add_labels(
+    x = "Traffic"
+  )  + labs(caption = "Fig 8") + geom_smooth(se=FALSE)
+```
+
+Fig8: A scatter plot demonstrating the effect of traffic in the numeric index on time. 
+There is evidence of shorter commute times when there is either little or a lot of traffic, whereas a longer commute time is when there is moderate traffic.
+
+To conclude, all of the variables establish some pattern of a relationship with respect to the journey time and should be further examined. There are also some entries stating a negative commute time which is impractical in the real world, therefore, we would be omitting these values for a more reliable outcome.
+
+**Word count for Q1:** 500
+
+## Question 2
+
+```{r model_1}
+
+model_1a <- lm(time~coffee, data = commute)
+model_1b <- lm(time~as.factor(coffee), data = commute)
+
+summary(model_1a)
+summary(model_1b)
+
+```
+Model 1b is preferable because the predictions it produces are more representative of the distribution of commute time for each amount of coffee. 
+
+Figure3 shows the mean commute time for not stopping by the cafe(coffee=0) is much lower than stopping for coffee(coffee=1,2,3,4). Thus, we should not assume a linear relationship between cups of coffee and time.
+
+Model 1a, each marginal increase in time from the marginal increase in coffee are equal, shown in the table below. This model assumes a linear relation between coffee and time.
+
+Model 1b, the predicted commute time for coffee=0 is lower at 28minutes while the predicted time for the journey with coffee=1,2,3,4 ranges between 40 to 50minutes as seen in the table. This is similar to the distributions of means observed in Figure3.
+
+Moreover, the calculated root mean squared error further supports the argument that Model 1b is better as the value of residuals is lower.
+
+``` {r compare}
+
+#plot predicted against actual, using model_1a to predict
+plot1 <- plot_obs_vs_pred(
+  model=model_1a,
+  title = "Observed VS Predicted 
+Commute Time using
+Model 1a"
+  ) + labs(caption = "Plot 1") + theme(plot.title=element_text(size=10))
+
+#plot predicted against actual, using model_1b to predict
+plot2 <- plot_obs_vs_pred(
+  model = model_1b,
+  title = "Observed VS Predicted 
+Commute Time using
+Model 1b"
+  )+ labs(caption = "Plot 2") + theme(plot.title=element_text(size=10))
+
+grid.arrange(plot1, plot2, coffee, ncol=3)
+
+```
+
+```{r predict, fig.dim=c(7, 2), results='hide'}
+
+#generate predictions
+plot.new()+grid.table(
+      data.frame(
+        Coffee = c(0, 1, 2, 3, 4),
+        Model_1a_Predicted_Time = round(predict(model_1a, newdata=data.frame(coffee=c(0, 1, 2, 3, 4))), digit=2),
+        Model_1b_Predicted_Time = round(predict(model_1b, newdata=data.frame(coffee=c(0, 1, 2, 3, 4))), digit=2)
+      )
+)
+
+```
+
+
+```{r rmse1, fig.dim=c(2,2), results='hide'}
+# 
+# #generate table of RMSEs
+# plot.new()+grid.table(
+#       data.frame(
+#         Model = c("1a", "1b"),
+#         RMSE = c(calc_rmse(model_1a), calc_rmse(model_1b))
+#       )
+# )
+```
+
+
+**Word count for Q2:** 150
+
+## Question 3
+
+```{r model_2a}
+
+model_2a <- lm(time~traffic, data = commute)
+summary(model_2a)
+
+commute %>% 
+  ggplot(aes(traffic, time)) + add_labels(
+    title="Scatter plot of Time Against Traffic",
+    x = "Traffic",
+    y = "Time (min)"
+  ) +geom_point() + geom_abline(intercept=model_2a$coef[1], slope=model_2a$coef[2], col="red") + geom_smooth(se = FALSE) 
+
+```
+Yes, there are concerns about the linearity of this model. The scatter plot of journey time against traffic shows points scattered along a curve. This is highlighted by the blue trend line.
+
+The red line shows the regression line from Model 2a. In this plot, we can see that the distribution of points does not follow the red line.
+
+Furthermore, the p-value for the coefficient of traffic is high and does not show a significant linear correlation between traffic and time. 
+
+Thus we should not assume linearity for this model.
+
+**Word count for Q3:** 90
+
+## Question 4
+
+- Because the range of the numeric index for traffic is between -5 and 5, the values below 0 using the second transformation (*log* function) and third transformation(*square root* function) would result in an imaginary number.
+
+```{r transformation}
+
+#t^2 ******* 
+commute %>% 
+  ggplot(aes(traffic^2, time)) + geom_point() + add_labels(
+    title="Scatter plot of Time Against Traffic^2",
+    x = "Traffic^2",
+    y = "Time (min)"
+  ) + geom_smooth(aes(col="blue"), se = FALSE) + geom_smooth(method="lm", aes(color="red"), se = FALSE) + 
+  scale_colour_identity(breaks = c("blue", "red"),
+                        labels = c("Trend line", "Regression line"),
+                        guide = "legend",
+                        name = "")
+
+
+#log t+5
+commute %>% 
+  ggplot(aes(log(traffic^2 + 5), time)) + geom_point() + add_labels(
+    title="Scatter plot of Time Against log(Traffic+5)",
+    x = "log(Traffic+5)",
+    y = "Time (min)"
+  ) + geom_smooth(aes(col="blue"), se = FALSE) + geom_smooth(method="lm", aes(color="red"), se = FALSE) + 
+  scale_colour_identity(breaks = c("blue", "red"),
+                        labels = c("Trend line", "Regression line"),
+                        guide = "legend",
+                        name = "")
+
+#sqrt t+5
+commute %>% 
+  ggplot(aes(sqrt(traffic^2 + 5), time)) + geom_point() + add_labels(
+    title="Scatter plot of Time Against Sqrt(Traffic+5)",
+    x = "sqrt(Traffic+5)",
+    y = "Time (min)"
+  ) + geom_smooth(aes(col="blue"), se = FALSE) + geom_smooth(method="lm", aes(color="red"), se = FALSE) + 
+  scale_colour_identity(breaks = c("blue", "red"),
+                        labels = c("Trend line", "Regression line"),
+                        guide = "legend",
+                        name = "")
+
+```
+
+The transformation traffic^2 is the most suitable as the distribution of points best follows a straight line with the trend line and best-fit line coinciding the most. 
+
+The most suitable transformation should have points concentrated along a straight line with points evenly distributed above and below it. 
+
+This can be more easily illustrated by the trend line and best fit line.
+
+The transformed variable that would be most suitable to assume linearity for should have its best fit line coinciding with the trend line, showing that points are scattered along a linear path. 
+
+Thus, from the three plots, the first transformation (traffic^2) is the most suitable transformation.
+
+
+```{r model_2b}
+traffic2 <- commute$traffic^2
+model_2b <- lm(time~traffic2, data=commute)
+summary(model_2a)
+summary(model_2b)
+
+# #DELETE CODE?????
+# plot_obs_vs_pred(model_2a,
+#                  title="Observed VS Predicted Commute Time using Model 2a")
+# plot_obs_vs_pred(model_2b, 
+#                  title="Observed VS Predicted Commute Time using Model 2b")
+```
+
+The main difference is the p-value. Model 2b has a very small p-value (<2e-16) for the coefficient of the transformed traffic variable while Model 2a’s is very large (0.121). 
+
+This shows that there is a significant linear correlation between traffic^2 and time (Model 2b) while there is no significant linear correlation between traffic and time (Model 2b).
+
+The estimated values of the coefficient relating to traffic and the intercept are also different. 
+The coefficient of traffic^2 in model 2b (-1.67) shows a negative linear correlation with a 1.67minute decrease in commute time for every unit increase in traffic^2. In Model 2a, there is a non-significant linear correlation. 
+
+**Word count for Q4:** 250
+
+## Question 5
+
+```{r model_3} 
+
+model_3 <- lm(
+  time~as.factor(direction)+as.factor(food)+as.factor(shoes)+as.factor(school)+coffee+rain+temperature+traffic,
+    data=commute
+)
+
+summary(model_3)
+
+
+```
+
+There are 11 coefficients which include the intercept, 6 from categorical covariates and 4 from numeric covariates. 
+
+For every categorical covariate, there is one less coefficient than the number of categories, for example, shoes, there are 4 types of shoes but there are only 3 coefficients. One shoe type (i.e. boots) acts as the reference category so there are only 3 dummy variables for the remaining types of shoes.
+
+Numeric covariates each have one coefficient. 
+
+- Interpret estimates:
+  - rain; There is a positive linear correlation between rain and time such that an increase in rain by 1 mm would lead to an increase of 2.28 minutes in commute time.
+  - shoessandals; It would take 8.05 minutes longer in commute time if one wears sandals instead of boots, given that all other variables remain the same. 
+  - Intercept; Commute time is estimated to be 14.1 minutes given that one is 
+      - travelling to work
+      - does not stop to buy food
+      - worn boots on the walk
+      - did not have to pick up their children from work
+      - faced 0 mm of rain
+      - travelling in 0 degrees Celsius temperature
+      - and encountered 0 indexes amount of traffic on the roads
+
+**Word count for Q5:** 191
+
+## Question 6
+
+All of the coefficients would be multiplied by 60. In the initial model, we measure time in minutes. Since all coefficients are related to time, a model with time in seconds would have all coefficients multiplied by 60.
+
+**Word count for Q6:** 38
+
+## Question 7
+
+```{r scatter_plot}
+
+commute %>% 
+  # filter(shoes=="trainers") %>% 
+  ggplot(aes(rain, time, color=shoes)) + geom_point() + add_labels(
+    title= "Scatter Plot of Time against Rain Segmented by Shoe types",
+    x = "Rain (mm)",
+    y = "Time (min)"
+  )
+
+```
+
+There is sufficient evidence to support the claim that the effect of rain on time is different depending on shoe type.
+
+From the scatter plot, we can see that points for sandals are clustered along an upward-sloping line. However, for other types of shoes, there seems to be no particular pattern in the scattering of points. 
+
+Thus, it seems that rain has an effect on time when wearing sandals but no effect on time when wearing other types of shoes.
+
+```{r model_4}
+model_4 <- lm(
+  time~as.factor(direction)+as.factor(food)+as.factor(shoes)+as.factor(school)+coffee+rain+temperature+traffic + rain*as.factor(shoes),
+    data=commute
+)
+summary(model_4)
+```
+
+Knowing that the effect of rain on time varies with shoe type, we should not assume the same general model relating rain and time across all shoe types and should instead have different linear regression models for each shoe type. This would illustrate the effect of rain on time for each shoe type.
+
+In this model, we include the variable `rain*as.factor(shoe)` which would relate to rain and shoe type. This produced 4 different sets of intercepts and slopes, one for each shoe type which can be seen in the plot below.
+
+
+Interpretation:
+The intercept indicates that with 0 mm of rain, it takes 19.0 minutes to commute with boots. With each additional mm of rain, it would take 0.287 less commute time.
+
+It would take 16.8 minutes, 13 minutes, and 16.3 minutes to commute with plimsolls, sandals and trainers respectively with 0 mm of rain. With each additional mm of rain, it would take 2.2, 6.7 and 1.2 minutes longer for plimsolls, sandals and trainers respectively.
+
+This shows that rain has an effect on time when wearing sandals as suspected earlier. 
+
+
+```{r intercept}
+
+# # intercepts
+# int_boots <- model_4$coef[1]
+# int_plimsolls <- int_boots + model_4$coef[4]
+# int_sandals <- int_boots + model_4$coef[5]
+# int_trainers <-int_boots + model_4$coef[6]
+# 
+# #slope coeffs
+# coef_boots <- model_4$coef[9] 
+# coef_plimsolls <- coef_boots + model_4$coef[12]
+# coef_sandals <- coef_boots + model_4$coef[13] 
+# coef_trainers <- coef_boots + model_4$coef[14]
+# 
+# #regression lines
+# line_boots = geom_abline(slope = coef_boots, intercept = int_boots, color="brown1")
+# line_plimsolls = geom_abline(slope = coef_plimsolls, intercept = int_plimsolls, color="chartreuse3")
+# line_sandals = geom_abline(slope = coef_sandals, intercept = int_sandals, color="darkturquoise")
+# line_trainers = geom_abline(slope = coef_trainers, intercept = int_trainers, color="purple") 
+# 
+
+
+commute %>% 
+  # filter(shoes=="sandals") %>%
+  ggplot(aes(rain, time, color=shoes)) + geom_point() + add_labels(
+    title= "Scatter Plot of Time against Rain Segmented by Shoe types
+with Regression lines for each Shoe type",
+    x = "Rain (mm)",
+    y = "Time (min)"
+  ) + geom_smooth(method = "lm", se = FALSE) 
+
+```
+
+
+**Word count for Q7:** 261
+
+## Question 8
+
+```{r model_5}
+model_5 <- lm(
+  time~as.factor(direction)+as.factor(food)+as.factor(shoes)+as.factor(school)+as.factor(coffee)+rain+temperature+traffic^2 + rain*as.factor(shoes), data=commute
+)
+summary(model_5)
+
+```
+
+Model 5 would be an adaptation of Model 3 with the following changes:
+1. Changing coffee into a categorical covariate; as shown in question 2, the number of cups of coffee taken should not assume linearity.
+2. Using transformation traffic^2 instead of traffic; this has been demonstrated in question 4 that the transformation traffic^2 is more suitable for the linear model as time and traffic^2 have a stronger linear correlation.
+3. Introducing variable `rain*as.factor(shoes)`; there are associations observed between the amount of rain and shoe types worn where this variable accounts for the different effects on time.
+
+**Word count for Q8:** 97
+
+## Question 9
+
+```{r fitted}
+
+plot_obs_vs_pred(model_3,
+  title = "Observed VS Predicted Commute Time using Model 3"
+)
+plot_obs_vs_pred(model_4,
+  title = "Observed VS Predicted Commute Time using Model 4"
+)
+plot_obs_vs_pred(model_5,
+  title = "Observed VS Predicted Commute Time using Model 5"
+)
+```
+
+
+```{r rmse2, fig.dim = c(2, 2), results='hide'}
+plot.new()+grid.table(
+      data.frame(
+        Model = c("3", "4", "5"),
+        RMSE = c(calc_rmse(model_3), calc_rmse(model_4), calc_rmse(model_5))
+      )
+)
+
+```
+
+From Model 3 to 5, value points are increasingly concentrated along the line `y=x` and are closer to the line, meaning that the residuals are the smallest.
+
+There are no issues occurred in these three plots
+
+The red line in each plot indicates the line `y=x`. I prefer Model 5 as the data points on the plot are the most closely distributed along the line, meaning that predicted values are the closest to observed values. This shows that Model 5 is the most accurate. 
+
+Furthermore, the smallest root mean squared error in Model 5 reinforces the fact that the residual in Model 5 is the smallest.
+
+**Word count for Q9:** 106
+
