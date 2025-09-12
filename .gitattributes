@@ -1,0 +1,32 @@
+# =========================================
+# Basic .gitattributes for an R repository
+# =========================================
+
+# R binary files
+*.Rdata binary
+*.RData binary
+*.rda   binary
+*.rdb   binary
+*.rds   binary
+*.Rdx   binary
+
+# R text/source files
+*.Rd    text
+*.Rmd   text
+*.R     text
+*.Rproj text
+*.[Rr]md linguist-detectable
+
+# SQL files
+*.sql linguist-detectable=true
+*.sql linguist-language=SQL
+*.sql text
+
+# Optional: ignore other code for stats if needed
+*.py linguist-language=Ignore
+*.ipynb linguist-language=Ignore
+*.pbix linguist-language=Ignore
+
+# Documentation / text
+*.txt linguist-language=Ignore
+*.md linguist-language=Markdown
