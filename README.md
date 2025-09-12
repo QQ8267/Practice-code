@@ -22,5 +22,5 @@ This repository showcases my **data analysis projects** using **SQL, R, and Exce
 - **Description:** Demonstrates **R programming skills**, data exploration, and reporting using R Markdown.
 
 ### 3. Bike Buyers Analysis
-- **Files:** `Bike buyers.xlsx`  
+- **Files:** `3. Bike buyers.xlsx`  
 - **Description:** Excel-based analysis of customer purchasing patterns and insights.
